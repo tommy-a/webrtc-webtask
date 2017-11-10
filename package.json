@@ -14,9 +14,13 @@
   "engines": {
     "node": "7.10.0"
   },
+  "scripts": {
+    "publish": "wt create https://raw.githubusercontent.com/tommy-a/webrtc-webtask/master/lib/webtask.js --name webrtc"
+  },
   "dependencies": {},
   "devDependencies": {
-    "@types/node": "8.0.50",
+    "@types/body-parser": "1.16.8",
+    "@types/express": "4.0.39",
     "tslint": "4.5.1 ",
     "tslint-microsoft-contrib": "4.0.1",
     "typescript": "2.6.1"
