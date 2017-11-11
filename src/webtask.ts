@@ -5,7 +5,7 @@ const Webtask = require('webtask-tools');
 import { Packet, validatePacket } from './packet';
 import { Storage } from './storage';
 
-// init Express context
+// init express app
 const app = express();
 app.use(bodyParser.json());
 
@@ -13,7 +13,7 @@ app.use(bodyParser.json());
 const storage = new Storage();
 
 // setup routes
-app.post('/packet', (req, res) => {
+app.post('/packet', async (req, res) => {
     const packet = req.body as Packet;
 
     // validate the request
@@ -22,29 +22,34 @@ app.post('/packet', (req, res) => {
         return res.status(400).send(err);
     }
 
+    // get storage state
+    await storage.deserialize((req as any).webtaskContext);
+
     // store the packet
     storage.queuePacket(packet);
+
+    // set storage state
+    await storage.serialize();
 
     res.sendStatus(200);
 });
 
-app.get('/packet', (req, res) => {
-    const key = req.body;
+app.get('/packet/:key', async (req, res) => {
+    const key = req.params.key;
     if (typeof key !== 'string') {
         return res.status(400).send('Must provide a valid key');
     }
 
+    // get storage state
+    await storage.deserialize((req as any).webtaskContext);
+
     // retrieve and send all outstanding packets
     const packets = storage.dequeuePackets(key);
+
+    // set storage state
+    await storage.serialize();
 
     res.status(200).send(packets);
 });
 
-// intercept the context storage for deserializing, as well as serializing + caching at the end
-module.exports = ((ctx: any, cb: any) => {
-    storage.deserialize(ctx, cb);
-
-    Webtask.fromExpress(app)(ctx, cb);
-
-    storage.serialize(ctx, cb);
-});
+module.exports = Webtask.fromExpress(app);
