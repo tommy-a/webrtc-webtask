@@ -4,11 +4,13 @@
         "module": "commonjs",
         "outDir": "./lib",
         "target": "es5",
-        "lib": ["es5", "es6"],
+        "lib": ["es5", "es6", "dom"],
         "sourceMap": true,
         "strictNullChecks": true
     },
     "include": [
+        "./typings/*.d.ts",
+        "./config/**/*",
         "./src/**/*"
     ],
     "exclude": [

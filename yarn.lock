@@ -9,6 +9,10 @@
     "@types/express" "*"
     "@types/node" "*"
 
+"@types/config@0.0.33":
+  version "0.0.33"
+  resolved "https://registry.yarnpkg.com/@types/config/-/config-0.0.33.tgz#2b256fe9744e9a3f913f551a9aa4660c41f28c4b"
+
 "@types/express-serve-static-core@*":
   version "4.0.56"
   resolved "https://registry.yarnpkg.com/@types/express-serve-static-core/-/express-serve-static-core-4.0.56.tgz#4ed556dcff9012cce6b016e214fdc5ef6e99db7d"
@@ -37,6 +41,16 @@
   dependencies:
     "@types/express-serve-static-core" "*"
     "@types/mime" "*"
+
+"@types/uuid@3.4.3":
+  version "3.4.3"
+  resolved "https://registry.yarnpkg.com/@types/uuid/-/uuid-3.4.3.tgz#121ace265f5569ce40f4f6d0ff78a338c732a754"
+  dependencies:
+    "@types/node" "*"
+
+"@types/webrtc@0.0.22":
+  version "0.0.22"
+  resolved "https://registry.yarnpkg.com/@types/webrtc/-/webrtc-0.0.22.tgz#45ed47a59a7cbffa545b44679390466c112f4843"
 
 abbrev@1:
   version "1.1.1"
@@ -543,6 +557,13 @@ component-emitter@^1.2.1:
 concat-map@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/concat-map/-/concat-map-0.0.1.tgz#d8a96bd77fd68df7793a73036a3ba0d5405d477b"
+
+config@1.28.1:
+  version "1.28.1"
+  resolved "https://registry.yarnpkg.com/config/-/config-1.28.1.tgz#7625d2a1e4c90f131d8a73347982d93c3873282d"
+  dependencies:
+    json5 "0.4.0"
+    os-homedir "1.0.2"
 
 configstore@^3.0.0:
   version "3.1.1"
@@ -1499,6 +1520,10 @@ json-stringify-safe@~5.0.1:
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/json-stringify-safe/-/json-stringify-safe-5.0.1.tgz#1296a2d58fd45f19a0f6ce01d65701e2c735b6eb"
 
+json5@0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/json5/-/json5-0.4.0.tgz#054352e4c4c80c86c0923877d449de176a732c8d"
+
 json5@^0.5.0, json5@^0.5.1:
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/json5/-/json5-0.5.1.tgz#1eade7acc012034ad84e2396767ead9fa5495821"
@@ -1898,7 +1923,7 @@ os-browserify@^0.2.0:
   version "0.2.1"
   resolved "https://registry.yarnpkg.com/os-browserify/-/os-browserify-0.2.1.tgz#63fc4ccee5d2d7763d26bbf8601078e6c2e0044f"
 
-os-homedir@^1.0.0:
+os-homedir@1.0.2, os-homedir@^1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/os-homedir/-/os-homedir-1.0.2.tgz#ffbc4988336e0e833de0c168c7ef152121aa7fb3"
 
@@ -2253,9 +2278,25 @@ ripemd160@^2.0.0, ripemd160@^2.0.1:
     hash-base "^2.0.0"
     inherits "^2.0.1"
 
+rtcpeerconnection-shim@^1.1.13:
+  version "1.1.13"
+  resolved "https://registry.yarnpkg.com/rtcpeerconnection-shim/-/rtcpeerconnection-shim-1.1.13.tgz#019fb9d5250675ed0a20cd5d9a49614e4482e1e0"
+  dependencies:
+    sdp "^2.2.0"
+
+rxjs@5.5.2:
+  version "5.5.2"
+  resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-5.5.2.tgz#28d403f0071121967f18ad665563255d54236ac3"
+  dependencies:
+    symbol-observable "^1.0.1"
+
 safe-buffer@^5.0.1, safe-buffer@^5.1.0, safe-buffer@^5.1.1, safe-buffer@~5.1.0, safe-buffer@~5.1.1:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/safe-buffer/-/safe-buffer-5.1.1.tgz#893312af69b2123def71f57889001671eeb2c853"
+
+sdp@^2.2.0, sdp@^2.3.0:
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/sdp/-/sdp-2.5.0.tgz#b15a0b1dfd0a38f6a8c780e58f8c8fe73c29ffe5"
 
 semver-diff@^2.0.0:
   version "2.1.0"
@@ -2430,6 +2471,10 @@ static-extend@^0.1.1:
     define-property "^0.2.5"
     object-copy "^0.1.0"
 
+store@2.0.12:
+  version "2.0.12"
+  resolved "https://registry.yarnpkg.com/store/-/store-2.0.12.tgz#8c534e2a0b831f72b75fc5f1119857c44ef5d593"
+
 stream-browserify@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/stream-browserify/-/stream-browserify-2.0.1.tgz#66266ee5f9bdb9940a4e4514cafb43bb71e5c9db"
@@ -2509,6 +2554,10 @@ supports-color@^4.0.0, supports-color@^4.2.1:
   resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-4.5.0.tgz#be7a0de484dec5c5cddf8b3d59125044912f635b"
   dependencies:
     has-flag "^2.0.0"
+
+symbol-observable@^1.0.1:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/symbol-observable/-/symbol-observable-1.0.4.tgz#29bf615d4aa7121bdd898b22d4b3f9bc4e2aa03d"
 
 tapable@^0.2.5, tapable@^0.2.7:
   version "0.2.8"
@@ -2722,7 +2771,7 @@ util@0.10.3, util@^0.10.3:
   dependencies:
     inherits "2.0.1"
 
-uuid@^3.0.0:
+uuid@3.1.0, uuid@^3.0.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.1.0.tgz#3dd3d3e790abc24d7b0d3a034ffababe28ebbc04"
 
@@ -2788,6 +2837,13 @@ webpack@3.8.1:
     watchpack "^1.4.0"
     webpack-sources "^1.0.1"
     yargs "^8.0.2"
+
+webrtc-adapter@6.0.0:
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/webrtc-adapter/-/webrtc-adapter-6.0.0.tgz#06d26fa3bf7e7965145dfe183ce6100be52b3a7c"
+  dependencies:
+    rtcpeerconnection-shim "^1.1.13"
+    sdp "^2.3.0"
 
 which-module@^2.0.0:
   version "2.0.0"

@@ -1,7 +1,13 @@
+const config = require('config');
+const fs = require('fs');
+const path = require('path');
 const webpack = require('webpack');
+
+fs.writeFileSync(path.resolve(__dirname, 'dist/config.json'), JSON.stringify(config));
 
 module.exports = {
     entry: {
+        test: './src/test.ts',
         webtask: './src/webtask.ts'
     },
 
@@ -13,7 +19,10 @@ module.exports = {
     },
 
     resolve: {
-        extensions: ['.ts']
+        extensions: ['.js', '.ts'],
+        alias: {
+            config: path.resolve(__dirname, 'dist/config.json')
+        }
     },
 
     externals: {
@@ -33,5 +42,7 @@ module.exports = {
                 }
             }
         ]
-    }
+    },
+
+    devtool: 'eval-source-map'
 };

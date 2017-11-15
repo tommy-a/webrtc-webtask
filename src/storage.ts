@@ -52,14 +52,14 @@ export class Storage {
         reject(err);
     }
 
-    queuePacket(packet: Packet): void {
+    queuePacket(p: Packet): void {
         // retrieve the queue
         const packets = this.state.packets;
-        const queue = packets.get(packet.dst) || [];
+        const queue = packets.get(p.dst) || [];
 
         // add and store the new packet to the queue
-        queue.push(packet);
-        packets.set(packet.dst, queue);
+        queue.push(p);
+        packets.set(p.dst, queue);
 
         this.isDirty = true;
     }

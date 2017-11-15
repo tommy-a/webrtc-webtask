@@ -1,0 +1,11 @@
+{
+    "webtaskUrl": "https://wt-9b56e5cd5756308f053b71710a43d7dd-0.run.webtask.io/webrtc",
+    "rtc": {
+        "iceServers": [
+            {
+                "urls": "stun:stun.l.google.com:19302"
+            }
+        ]
+    }
+}
+  
