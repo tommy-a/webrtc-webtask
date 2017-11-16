@@ -5,6 +5,7 @@
         "outDir": "./lib",
         "target": "es5",
         "lib": ["es5", "es6", "dom"],
+        "jsx": "react",
         "sourceMap": true,
         "strictNullChecks": true
     },
@@ -15,5 +16,8 @@
     ],
     "exclude": [
         "node_modules"
-    ]
+    ],
+    "awesomeTypescriptLoaderOptions": {
+        "useCache": true
+    }
 }

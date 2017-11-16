@@ -7,7 +7,7 @@ fs.writeFileSync(path.resolve(__dirname, 'dist/config.json'), JSON.stringify(con
 
 module.exports = {
     entry: {
-        test: './src/test.ts',
+        client: './src/client.tsx',
         webtask: './src/webtask.ts'
     },
 
@@ -19,7 +19,7 @@ module.exports = {
     },
 
     resolve: {
-        extensions: ['.js', '.ts'],
+        extensions: ['.js', '.jsx', '.ts', '.tsx'],
         alias: {
             config: path.resolve(__dirname, 'dist/config.json')
         }
@@ -40,7 +40,7 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.ts?$/,
+                test: /\.tsx?$/,
                 loader: 'awesome-typescript-loader',
                 include: `${__dirname}/src`,
                 query: {

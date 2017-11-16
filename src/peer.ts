@@ -45,7 +45,7 @@ export class Peer {
         };
 
         this.pc.ontrack = (evt) => {
-            const player = document.getElementById('received_video')! as HTMLMediaElement;
+            const player = document.getElementById('remote-video')! as HTMLMediaElement;
             player.srcObject = evt.streams[0];
         };
 
