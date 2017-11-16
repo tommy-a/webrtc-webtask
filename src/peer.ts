@@ -1,7 +1,6 @@
 import * as config from 'config';
 import { Subject } from 'rxjs/Subject';
 import { Subscriber } from 'rxjs/Subscriber';
-import { Subscription } from 'rxjs/Subscription';
 import * as store from 'store';
 import 'webrtc-adapter';
 
@@ -18,15 +17,9 @@ export class Peer {
     private src: string; // self-id
     private dst: string; // id of the peer to connect to
 
-    private candidates: Subject<RTCIceCandidate>; // pool for keeping track of candidates to be published
-    private subscription: Subscription; // ties candidates to the publishCandidate() method; must be destroyed on close()
-
-    private trackCount: number;
-    private offersSent: number;
-
     private _publisher = new Subject<Packet>();
     private _subscriber = new Subscriber<Packet>({
-        next: async (packet) => await this.onPacket(packet) // TODO: do we need to catch + throw errors here?
+        next: async (packet) => await this.onPacket(packet)
     });
 
     get publisher() { return this._publisher.asObservable(); }
@@ -51,6 +44,11 @@ export class Peer {
             await this.publishOffer();
         };
 
+        this.pc.ontrack = (evt) => {
+            const player = document.getElementById('received_video')! as HTMLMediaElement;
+            player.srcObject = evt.streams[0];
+        };
+
         await this.addTracks();
     }
 
@@ -61,7 +59,6 @@ export class Peer {
 
         this.isConnecting = false;
         this.pc.close();
-        this.subscription.unsubscribe();
     }
 
     private init(src: string, dst: string, session: number): void {
@@ -74,26 +71,16 @@ export class Peer {
 
         store.set(dst, session); // update the session
 
-        this.candidates = new Subject<RTCIceCandidate>();
-        this.subscription = new Subscription();
-
-        this.trackCount = 0;
-        this.offersSent = 0;
-
         this.pc.onicecandidate = (evt) => {
             if (evt.candidate) {
-                this.candidates.next(evt.candidate);
-            } else {
-                this.candidates.complete();
+                this.publishCandidate(evt.candidate);
             }
         };
     }
 
     private async addTracks(): Promise<void> {
         const stream = await navigator.mediaDevices.getUserMedia(Peer.CONSTRAINTS);
-
         const tracks = stream.getTracks();
-        this.trackCount = tracks.length;
 
         // triggers negotiation if an offer hasn't been created/received yet
         tracks.forEach(track => this.pc.addTrack(track, stream));
@@ -106,30 +93,24 @@ export class Peer {
         if (this.isConnecting && packet.src !== this.dst) {
             return;
         }
-        // ignore stale payloads
+        // ignore stale packets
         if (packet.session < session) {
             return;
+        }
+        // close an old session
+        if (packet.session > session) {
+            this.close();
         }
 
         const payload = packet.payload as RTCPayload;
         const isOffer = payload.type === 'offer';
 
-        // close an old session, and react to a newer offer
-        if (packet.session > session) {
-            this.close();
-            return isOffer ? this.handleOffer(packet) : Promise.resolve();
-        }
-
         // check for RTCSessionDescription
         if (payload.sdp) {
-            if (isOffer) {
-                return this.handleOffer(packet);
-            } else {
-                return this.hasOffer ? this.handleAnswer(payload) : this.close();
-            }
+            return isOffer ? this.handleOffer(packet) : this.handleAnswer(payload);
         } else {
             // otherwise it's an RTCIceCandidate
-            return this.hasOffer ? this.handleCandidate(payload) : this.close();
+            return this.handleCandidate(payload);
         }
     }
 
@@ -149,7 +130,6 @@ export class Peer {
         await this.pc.setRemoteDescription(packet.payload as RTCPayload);
 
         if (isInitialOffer) {
-            this.publishCandidates();
             await this.addTracks();
             await this.publishAnswer();
         }
@@ -168,9 +148,6 @@ export class Peer {
         await this.pc.setLocalDescription(offer);
 
         this.publishPacket(this.pc.localDescription!);
-
-        this.offersSent++;
-        this.publishCandidates();
     }
 
     private async publishAnswer(): Promise<void> {
@@ -180,16 +157,11 @@ export class Peer {
         this.publishPacket(this.pc.localDescription!);
     }
 
-    // this is only to be called after publishing or handling an initial offer
-    private publishCandidates(): void {
-        if (this.offersSent !== this.trackCount) {
-            return;
-        }
-
-        this.subscription.add(this.candidates.subscribe(async (c) => await this.publishPacket(c)));
+    private publishCandidate(candidate: RTCIceCandidate): void {
+        this.publishPacket(candidate);
     }
 
-    private async publishPacket(payload: {}): Promise<void> {
+    private publishPacket(payload: {}): void {
         this._publisher.next({
             src: this.src,
             dst: this.dst,

@@ -26,9 +26,15 @@ module.exports = {
     },
 
     externals: {
-        "body-parser": "body-parser",
-        "express": "express",
-        "webtask-tools": "webtask-tools"
+        'body-parser': 'body-parser',
+        'express': 'express',
+        'webtask-tools': 'webtask-tools'
+    },
+
+    node: {
+        fs: 'empty',
+        net: 'empty',
+        tls: 'empty'
     },
 
     module: {

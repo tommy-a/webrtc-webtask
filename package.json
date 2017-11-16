@@ -19,6 +19,7 @@
     "publish": "npm run build && wt create ./dist/webtask.js --name webrtc"
   },
   "dependencies": {
+    "request-promise-native": "1.0.5",
     "rxjs": "5.5.2",
     "store": "2.0.12",
     "uuid": "3.1.0",
@@ -28,6 +29,7 @@
     "@types/body-parser": "1.16.8",
     "@types/config": "0.0.33",
     "@types/express": "4.0.39",
+    "@types/request-promise-native": "1.0.10",
     "@types/uuid": "3.4.3",
     "@types/webrtc": "0.0.22",
     "awesome-typescript-loader": "3.3.0",

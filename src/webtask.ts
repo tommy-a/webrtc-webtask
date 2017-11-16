@@ -22,14 +22,9 @@ app.post('/packet', async (req, res) => {
         return res.status(400).send(err);
     }
 
-    // get storage state
-    await storage.deserialize((req as any).webtaskContext);
-
     // store the packet
-    storage.queuePacket(packet);
-
-    // set storage state
-    await storage.serialize();
+    storage.context = (req as any).webtaskContext;
+    await storage.queue(packet);
 
     res.sendStatus(200);
 });
@@ -40,16 +35,20 @@ app.get('/packet/:key', async (req, res) => {
         return res.status(400).send('Must provide a valid key');
     }
 
-    // get storage state
-    await storage.deserialize((req as any).webtaskContext);
-
     // retrieve and send all outstanding packets
-    const packets = storage.dequeuePackets(key);
-
-    // set storage state
-    await storage.serialize();
+    storage.context = (req as any).webtaskContext;
+    const packets = await storage.dequeue(key);
 
     res.status(200).send(packets);
+});
+
+// for debugging purposes...
+app.delete('/packet', (req, res) => {
+    // clear all packets
+    storage.context = (req as any).webtaskContext;
+    storage.reset();
+
+    res.sendStatus(200);
 });
 
 module.exports = Webtask.fromExpress(app);

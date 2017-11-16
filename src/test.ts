@@ -1,24 +1,22 @@
+import 'rxjs/add/observable/timer';
+import 'rxjs/add/operator/zip';
+import { Observable } from 'rxjs/Observable';
+
 import { Peer } from './peer';
+import { Poller } from './poller';
 
-const peerA = new Peer();
-const peerB = new Peer();
+const srcPeer = new Peer();
+const dstPeer = new Peer();
 
-peerA.publisher.subscribe({
-    next: (packet) => {
-        console.log('A:');
-        console.log(packet);
-        peerB.subscriber.next(packet);
-    }
-});
+const srcPoller = new Poller('src');
+const dstPoller = new Poller('dst');
 
-peerB.publisher.subscribe({
-    next: (packet) => {
-        console.log('B:');
-        console.log(packet);
-        peerA.subscriber.next(packet);
-    }
-});
+srcPeer.publisher.subscribe(srcPoller.subscriber);
+dstPeer.publisher.subscribe(dstPoller.subscriber);
+
+srcPoller.publisher.subscribe(srcPeer.subscriber);
+dstPoller.publisher.subscribe(dstPeer.subscriber);
 
 (async () => {
-    await peerA.connect('src', 'dst');
+    await srcPeer.connect('src', 'dst');
 })();

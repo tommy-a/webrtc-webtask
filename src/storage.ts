@@ -4,75 +4,112 @@ interface State {
     packets: Map<PublicKey, Packet[]>;
 }
 
+interface Delta {
+    packet?: Packet;
+    key?: PublicKey;
+}
+
 export class Storage {
     private storage: any;
-
     private state: State;
-    private isDirty = false;
 
-    deserialize(context: any): Promise<void> {
-        this.storage = context.storage;
+    set context(context: any) { this.storage = context.storage; };
 
+    async queue(packet: Packet): Promise<void> {
+        await this.get();
+        await this.set({ packet });
+    }
+
+    async dequeue(key: PublicKey): Promise<Packet[]> {
+        await this.get();
+
+        // check if there are any packets to dequeue
+        const queue = this.state.packets.get(key);
+        if (!queue) {
+            return [];
+        }
+
+        return this.set({ key });
+    }
+
+    reset(): void {
+        this.storage.set(null, { force: 1 }, (e: any) => {
+            if (e) { throw e; }
+        });
+    }
+
+    private get(): Promise<void> {
         return new Promise((resolve, reject) => {
-            // obtain storage
-            this.storage.get((err: any, data: {[key in keyof State]: any}) => {
-                if (err) { return reject(err); }
-
-                // deserialize state maps
-                this.state = {
-                    packets: new Map(data ? JSON.parse(data.packets) : null)
-                };
-
-                resolve();
+            // obtain state from storage
+            this.storage.get((err: any, data: any) => {
+                if (!err) {
+                    this.deserialize(data);
+                    resolve();
+                } else {
+                    reject(err);
+                }
             });
         });
     }
 
-    serialize(): Promise<void> {
-        if (!this.isDirty) { return Promise.resolve(); }
-
-        return new Promise((resolve, reject) => {
-            // serialize state maps
-            const data = {
-                packets: JSON.stringify(Array.from(this.state.packets.entries()))
-            };
-
-            // overwrite storage
-            this.storage.set(data, ((err: any) => this.attemptSet(err, data, 3, resolve, reject)));
-        });
+    private deserialize(data: {[key in keyof State]: any}): void {
+        this.state = {
+            packets: new Map(data ? JSON.parse(data.packets) : null)
+        };
     }
 
-    private attemptSet(err: any, data: any, attempt: number, resolve: any, reject: any): void {
-        if (!err) { return resolve(); }
+    private serialize() {
+        return {
+            packets: JSON.stringify(Array.from(this.state.packets.entries()))
+        };
+    }
 
-        if (err.code === 409 && attempt--) {
-            return this.storage.set(data, this.attemptSet(err, data, attempt, resolve, reject));
+    private async set(delta: Delta): Promise<Packet[]> {
+        let queue: Packet[] = [];
+
+        // keep attempting to write to storage
+        let err = { code: 409 } as any;
+        while (err && err.code === 409) {
+            // (re-)apply the outstanding delta
+            queue = this.applyDelta(delta);
+
+            // serialize state
+            const data = this.serialize();
+
+            // attempt to overwrite storage
+            await new Promise((resolve, reject) => {
+                this.storage.set(data, (e: any) => {
+                    err = e;
+                    if (err && err.code === 409) {
+                        this.deserialize(err.conflict);
+                    } else if (err) {
+                        return reject();
+                    }
+
+                    resolve();
+                });
+            }).catch(() => { throw err; });
         }
 
-        reject(err);
+        return queue;
     }
 
-    queuePacket(p: Packet): void {
-        // retrieve the queue
+    private applyDelta(delta: Delta): Packet[] {
         const packets = this.state.packets;
-        const queue = packets.get(p.dst) || [];
 
-        // add and store the new packet to the queue
-        queue.push(p);
-        packets.set(p.dst, queue);
-
-        this.isDirty = true;
-    }
-
-    dequeuePackets(key: PublicKey): Packet[] {
         // retrieve the queue
-        const packets = this.state.packets;
-        const queue = packets.get(key) || [];
+        const key = delta.key!;
+        const packet = delta.packet!;
+        const queue = packets.get(key || packet.dst) || [];
 
-        // clear and return any existing queue
-        if (queue.length >= 1) {
+        // apply the delta
+        if (packet) {
+            // add and store the new packet to the queue
+            queue.push(packet);
+            packets.set(packet.dst, queue);
+        } else {
+            // clear the existing queue
             packets.delete(key);
-            this.isDirty = true;
         }
 
         return queue;
