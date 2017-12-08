@@ -28,6 +28,7 @@
       "no-invalid-this": false,
       "max-func-body-length": false,
       "no-unnecessary-override": false,
-      "no-default-export": false
+      "no-default-export": false,
+      "react-tsx-curly-spacing": false
     }
   }

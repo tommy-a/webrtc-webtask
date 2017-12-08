@@ -67,15 +67,21 @@ class Client extends React.Component<Props, State> {
         this.peer.connect(src, dst);
     }
 
+    onDisconnectClick() {
+        this.peer.close();
+    }
+
     render() {
         const { isLocalOpen, isRemoteOpen, isRemoteConnecting } = this.state;
 
-        const gridStyle = { paddingTop: 50 };
         const segmentStyle = { width: '100%', height: '100%', padding: 0 };
         const videoStyle = { width: '100%', height: '100%' };
 
         return (
-            <Grid centered relaxed padded='vertically' style={ gridStyle }>
+            <Grid centered relaxed padded='vertically'>
+                <Grid.Row>
+                    <Header size='large' content='WebRTC Webtask Signaling Demo' />
+                </Grid.Row>
                 <Grid.Row>
                     <Grid.Column width={ 4 } textAlign={ 'center' }>
                         <Segment inverted basic style={ segmentStyle }>
@@ -87,11 +93,11 @@ class Client extends React.Component<Props, State> {
                     </Grid.Column>
                     <Grid.Column width={ 4 } textAlign={ 'center' } verticalAlign='middle'>
                         <Header size='medium' content='User Id:' subheader={ this.props.uuid } />
-                        <Header size='medium' content='Connect To:' />
-                        <div className='ui mini fluid action input'>
-                            <input ref='idInput' type='text' placeholder='id...' />
-                            <Button icon='world' onClick={ () => this.onConnectClick() } />
-                        </div>
+                        {isRemoteConnecting || isRemoteOpen ? (
+                            <Button onClick={ () => this.onDisconnectClick() }> Disconnect </Button>
+                        ) : (
+                            this.renderIdInput()
+                        )}
                     </Grid.Column>
                     <Grid.Column width={ 4 } textAlign={ 'center' }>
                         <Segment inverted basic style={ segmentStyle }>
@@ -103,6 +109,18 @@ class Client extends React.Component<Props, State> {
                     </Grid.Column>
                 </Grid.Row>
             </Grid>
+        );
+    }
+
+    renderIdInput() {
+        return (
+            <div>
+                <Header size='medium' content='Connect To:' />
+                <div className='ui mini fluid action input'>
+                    <input ref='idInput' type='text' placeholder='id...' />
+                    <Button icon='world' onClick={ () => this.onConnectClick() } />
+                </div>
+            </div>
         );
     }
 }

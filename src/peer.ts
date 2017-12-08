@@ -15,6 +15,7 @@ export class Peer {
     private pc = new RTCPeerConnection(config.rtc);
     private src: string; // self-id
     private dst: string; // id of the peer to connect to
+    private candidates: RTCIceCandidate[] = [];
 
     // pub/sub for receiving and emitting packets
     private _publisher = new Subject<Packet>();
@@ -36,6 +37,8 @@ export class Peer {
     get hasOffer() { return this.hasLocalOffer || this.hasRemoteOffer; }
     get hasLocalOffer() { return this.pc.signalingState === 'have-local-offer'; }
     get hasRemoteOffer() { return this.pc.signalingState === 'have-remote-offer'; }
+
+    get player() { return document.getElementById('remote-video')! as HTMLMediaElement; }
 
     constructor(readonly localStream: MediaStream) {}
 
@@ -67,6 +70,7 @@ export class Peer {
         }
 
         this.pc.close();
+        this.player.srcObject = null;
 
         this.isActive = false;
         this._isRemoteConnecting.next(false);
@@ -82,6 +86,7 @@ export class Peer {
         this.pc = new RTCPeerConnection(config.rtc);
         this.src = src;
         this.dst = dst;
+        this.candidates = [];
 
         this.updateSession(dst, session);
 
@@ -91,10 +96,14 @@ export class Peer {
             }
         };
 
-        this.pc.ontrack = (evt) => {
-            const player = document.getElementById('remote-video')! as HTMLMediaElement;
-            player.srcObject = evt.streams[0];
+        this.pc.oniceconnectionstatechange = (evt) => {
+            if (this.pc.iceConnectionState === 'disconnected') {
+                this.close();
+            }
+        };
 
+        this.pc.ontrack = (evt) => {
+            this.player.srcObject = evt.streams[0];
             this._isRemoteConnecting.next(false);
             this._isRemoteOpen.next(true);
         };
@@ -138,24 +147,12 @@ export class Peer {
     }
 
     private async handleOffer(packet: Packet): Promise<void> {
-        // resolve a tiebreaker if both peer's have sent an offer with the same session id
-        if (this.hasLocalOffer && this.src < packet.src) {
-            return; // (i.e. the other peer should publish an answer instead)
-        }
-
-        // is this the first offer, or a tiebreaker replacement
-        const isInitialOffer = !this.hasOffer || this.hasLocalOffer;
-        if (isInitialOffer) {
-            // swap src with dst -> the offer is coming from the peer
-            this.init(packet.dst, packet.src, packet.session);
-        }
+        // swap src with dst -> the offer is coming from the peer
+        this.init(packet.dst, packet.src, packet.session);
 
         await this.pc.setRemoteDescription(packet.payload as RTCPayload);
-
-        if (isInitialOffer) {
-            await this.addTracks();
-            await this.publishAnswer();
-        }
+        await this.addTracks();
+        await this.publishAnswer();
     }
 
     private async handleAnswer(answer: RTCSessionDescription): Promise<void> {
@@ -163,7 +160,17 @@ export class Peer {
     }
 
     private async handleCandidate(candidate: RTCIceCandidate): Promise<void> {
-        await this.pc.addIceCandidate(candidate);
+        // wait until an offer is in place
+        if (!this.hasOffer) {
+            this.candidates.push(candidate);
+        } else {
+            await this.pc.addIceCandidate(candidate);
+        }
+    }
+
+    private async processCandidates(): Promise<void> {
+        this.candidates.forEach(async (c) => await this.pc.addIceCandidate(c));
+        this.candidates = [];
     }
 
     private async publishOffer(): Promise<void> {
@@ -178,6 +185,8 @@ export class Peer {
         await this.pc.setLocalDescription(answer);
 
         this.publishPacket(this.pc.localDescription!);
+
+        this.processCandidates();
     }
 
     private publishCandidate(candidate: RTCIceCandidate): void {
