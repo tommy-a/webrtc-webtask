@@ -1,12 +1,12 @@
-import { Packet, PublicKey } from './packet';
+import { Packet, UserId } from './packet';
 
 interface State {
-    packets: Map<PublicKey, Packet[]>;
+    packets: Map<UserId, Packet[]>;
 }
 
 interface Delta {
     packet?: Packet;
-    key?: PublicKey;
+    id?: UserId;
 }
 
 export class Storage {
@@ -20,16 +20,16 @@ export class Storage {
         await this.set({ packet });
     }
 
-    async dequeue(key: PublicKey): Promise<Packet[]> {
+    async dequeue(id: UserId): Promise<Packet[]> {
         await this.get();
 
         // check if there are any packets to dequeue
-        const queue = this.state.packets.get(key);
+        const queue = this.state.packets.get(id);
         if (!queue) {
             return [];
         }
 
-        return this.set({ key });
+        return this.set({ id });
     }
 
     reset(): void {
@@ -98,9 +98,9 @@ export class Storage {
         const packets = this.state.packets;
 
         // retrieve the queue
-        const key = delta.key!;
+        const id = delta.id!;
         const packet = delta.packet!;
-        const queue = packets.get(key || packet.dst) || [];
+        const queue = packets.get(id || packet.dst) || [];
 
         // apply the delta
         if (packet) {
@@ -109,7 +109,7 @@ export class Storage {
             packets.set(packet.dst, queue);
         } else {
             // clear the existing queue
-            packets.delete(key);
+            packets.delete(id);
         }
 
         return queue;

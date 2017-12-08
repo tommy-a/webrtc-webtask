@@ -9,14 +9,14 @@ import { Packet } from './packet';
 type RTCPayload = {[key in keyof (RTCIceCandidate & RTCSessionDescription)]: any};
 
 export class Peer {
-    static CONSTRAINTS = { audio: true, video: true };
+    private isActive = false;
 
-    private isConnecting = false;
-
+    // the peer connection for the current session
     private pc = new RTCPeerConnection(config.rtc);
     private src: string; // self-id
     private dst: string; // id of the peer to connect to
 
+    // pub/sub for receiving and emitting packets
     private _publisher = new Subject<Packet>();
     private _subscriber = new Subscriber<Packet>({
         next: async (packet) => await this.onPacket(packet)
@@ -25,78 +25,101 @@ export class Peer {
     get publisher() { return this._publisher.asObservable(); }
     get subscriber() { return this._subscriber; }
 
+    // emitters for UI state updates
+    private _isRemoteConnecting = new Subject<boolean>();
+    private _isRemoteOpen = new Subject<boolean>();
+
+    get isRemoteConnecting() { return this._isRemoteConnecting.asObservable(); }
+    get isRemoteOpen() { return this._isRemoteOpen.asObservable(); }
+
+    // getters for the current state of the peer connection
     get hasOffer() { return this.hasLocalOffer || this.hasRemoteOffer; }
     get hasLocalOffer() { return this.pc.signalingState === 'have-local-offer'; }
     get hasRemoteOffer() { return this.pc.signalingState === 'have-remote-offer'; }
+
+    constructor(readonly localStream: MediaStream) {}
 
     // incrementally updated sequence number used for ignoring stale payloads
     private currentSession(dst: string): number {
         return store.get(dst, 0);
     }
 
+    private updateSession(dst: string, session: number): number {
+        return store.set(dst, session);
+    }
+
     async connect(src: string, dst: string): Promise<void> {
         // start a new session
         const session = this.currentSession(dst) + 1;
-
         this.init(src, dst, session);
 
         this.pc.onnegotiationneeded = async (evt) => {
             await this.publishOffer();
         };
 
-        this.pc.ontrack = (evt) => {
-            const player = document.getElementById('remote-video')! as HTMLMediaElement;
-            player.srcObject = evt.streams[0];
-        };
-
+        // add the stream to the peer connection
         await this.addTracks();
     }
 
     close(): void {
-        if (!this.isConnecting) {
+        if (!this.isActive) {
             return;
         }
 
-        this.isConnecting = false;
         this.pc.close();
+
+        this.isActive = false;
+        this._isRemoteConnecting.next(false);
+        this._isRemoteOpen.next(false);
     }
 
     private init(src: string, dst: string, session: number): void {
         this.close();
-        this.isConnecting = true;
+
+        this.isActive = true;
+        this._isRemoteConnecting.next(true);
 
         this.pc = new RTCPeerConnection(config.rtc);
         this.src = src;
         this.dst = dst;
 
-        store.set(dst, session); // update the session
+        this.updateSession(dst, session);
 
         this.pc.onicecandidate = (evt) => {
             if (evt.candidate) {
                 this.publishCandidate(evt.candidate);
             }
         };
+
+        this.pc.ontrack = (evt) => {
+            const player = document.getElementById('remote-video')! as HTMLMediaElement;
+            player.srcObject = evt.streams[0];
+
+            this._isRemoteConnecting.next(false);
+            this._isRemoteOpen.next(true);
+        };
     }
 
     private async addTracks(): Promise<void> {
-        const stream = await navigator.mediaDevices.getUserMedia(Peer.CONSTRAINTS);
-        const tracks = stream.getTracks();
-
         // triggers negotiation if an offer hasn't been created/received yet
-        tracks.forEach(track => this.pc.addTrack(track, stream));
+        const tracks = this.localStream.getTracks();
+        tracks.forEach(track => this.pc.addTrack(track, this.localStream));
     }
 
     private async onPacket(packet: Packet): Promise<void> {
         const session = this.currentSession(packet.src);
 
-        // ignore packets that aren't from the active dst
-        if (this.isConnecting && packet.src !== this.dst) {
-            return;
-        }
         // ignore stale packets
         if (packet.session < session) {
             return;
         }
+
+        // ignore packets that aren't from the active session's peer
+        if (this.isActive && packet.src !== this.dst) {
+            this.updateSession(packet.src, session + 1); // ignore this session request for now, but anticipate a future request
+            return;
+        }
+
         // close an old session
         if (packet.session > session) {
             this.close();

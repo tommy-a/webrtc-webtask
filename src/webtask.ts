@@ -29,15 +29,15 @@ app.post('/packet', async (req, res) => {
     res.sendStatus(200);
 });
 
-app.get('/packet/:key', async (req, res) => {
-    const key = req.params.key;
-    if (typeof key !== 'string') {
-        return res.status(400).send('Must provide a valid key');
+app.get('/packet/:id', async (req, res) => {
+    const id = req.params.id;
+    if (typeof id !== 'string') {
+        return res.status(400).send('Must provide a valid id');
     }
 
     // retrieve and send all outstanding packets
     storage.context = (req as any).webtaskContext;
-    const packets = await storage.dequeue(key);
+    const packets = await storage.dequeue(id);
 
     res.status(200).send(packets);
 });

@@ -22,7 +22,7 @@ export class Controller {
 
     private subscription: Subscription; // for polling the webtask
 
-    constructor(readonly key: string) {}
+    constructor(readonly id: string) {}
 
     start(): void {
         if (this.subscription) { return; }
@@ -55,7 +55,7 @@ export class Controller {
     private getPackets(): Promise<Packet[]> {
         return rp({
             method: 'GET',
-            uri: `${config.webtaskUrl}/${this.key}`,
+            uri: `${config.webtaskUrl}/${this.id}`,
             json: true
         });
     }

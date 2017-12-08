@@ -1,8 +1,8 @@
-export type PublicKey = string;
+export type UserId = string;
 
 export interface Packet {
-    src: PublicKey;
-    dst: PublicKey;
+    src: UserId;
+    dst: UserId;
     session: number;
     payload: {};
 }
